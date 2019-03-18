@@ -36,6 +36,16 @@ Example:
 
   ```
 
+Options
+-------
+Add `SENTRY_CLIENT_OPTIONS` to `settings.py` - adds raven client arguments.
+
+  ```
+  SENTRY_CLIENT_OPTIONS = {
+    'environment': 'dev'
+  } 
+  ```
+
 Supported versions
 ------------------
 This package works with Python 2.7, 3.4 and 3.5. It has been tested with Scrapy up to version 1.2.1.  
