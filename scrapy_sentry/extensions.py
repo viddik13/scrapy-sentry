@@ -24,9 +24,10 @@ class Log(object):
     @classmethod
     def from_crawler(cls, crawler):
         dsn = crawler.settings.get("SENTRY_DSN", None)
+        additional_opts = crawler.settings.get("SENTRY_CLIENT_OPTIONS", {})
         if dsn is None:
             raise NotConfigured('No SENTRY_DSN configured')
-        o = cls(dsn=dsn)
+        o = cls(dsn=dsn, **additional_opts)
         return o
 
 
@@ -37,7 +38,8 @@ class Signals(object):
     @classmethod
     def from_crawler(cls, crawler, client=None, dsn=None):
         dsn = crawler.settings.get("SENTRY_DSN", None)
-        o = cls(dsn=dsn)
+        additional_opts = crawler.settings.get("SENTRY_CLIENT_OPTIONS", {})
+        o = cls(dsn=dsn,**additional_opts)
 
         sentry_signals = crawler.settings.get("SENTRY_SIGNALS", [])
         if len(sentry_signals):
@@ -68,12 +70,13 @@ class Errors(object):
     @classmethod
     def from_crawler(cls, crawler, client=None, dsn=None):
         release = crawler.settings.get("RELEASE", get_release(crawler))
+        additional_opts = crawler.settings.get("SENTRY_CLIENT_OPTIONS", {})
 
         dsn = os.environ.get(
             "SENTRY_DSN", crawler.settings.get("SENTRY_DSN", None))
         if dsn is None:
             raise NotConfigured('No SENTRY_DSN configured')
-        o = cls(dsn=dsn, release=release)
+        o = cls(dsn=dsn, release=release, **additional_opts)
         crawler.signals.connect(o.spider_error, signal=signals.spider_error)
         return o
 
