@@ -10,9 +10,8 @@ import logging
 
 from scrapy import signals
 from scrapy.exceptions import NotConfigured
-
 from six import StringIO
-
+import sentry_sdk
 
 from .utils import init, get_client, get_release, response_to_dict
 
@@ -58,14 +57,18 @@ class Signals(object):
             'args': args,
             'kwargs': kwargs,
         }
-        msg = self.client.capture('Message', message=message, extra=extra)
-        ident = self.client.get_ident(msg)
+        with sentry_sdk.push_scope() as scope:
+            for k, v in extra.iteritems():
+                scope.set_extra(k,v)
+            sentry_sdk.capture_message(message, extra=extra)
+        ident = sentry_sdk.last_event_id
         return ident
 
 
 class Errors(object):
     def __init__(self, dsn=None, client=None, **kwargs):
-        self.client = client if client else get_client(dsn, **kwargs)
+        # self.client = client if client else get_client(dsn, **kwargs)
+        get_client(dsn, **kwargs)
 
     @classmethod
     def from_crawler(cls, crawler, client=None, dsn=None):
@@ -95,12 +98,12 @@ class Errors(object):
             'response': res_dict,
             'traceback': "\n".join(traceback.getvalue().split("\n")[-5:]),
         }
-        msg = self.client.captureMessage(
-            message=u"[{}] {}".format(spider.name, repr(failure.value)),
-            extra=extra)  # , stack=failure.stack)
+        with sentry_sdk.push_scope() as scope:
+            for k, v in extra.iteritems():
+                scope.set_extra(k,v)
+            sentry_sdk.capture_message("[{}] {}".format(spider.name, repr(failure.value)))
 
-        ident = self.client.get_ident(msg)
-
+        ident = sentry_sdk.last_event_id
         logging.log(logging.WARNING, "Sentry Exception ID '%s'" % ident)
 
         return ident
