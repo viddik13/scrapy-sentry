@@ -13,10 +13,11 @@ from scrapy.http import Request, Headers  # noqa
 from scrapy.utils.reqser import request_to_dict, request_from_dict  # noqa
 from scrapy.responsetypes import responsetypes
 
-from raven import Client
-from raven.conf import setup_logging
-from raven.handlers.logging import SentryHandler
-from raven.transport.requests import RequestsHTTPTransport
+# from raven import Client
+# from raven.conf import setup_logging
+# from raven.handlers.logging import SentryHandler
+# from raven.transport.requests import RequestsHTTPTransport
+import sentry_sdk
 
 SENTRY_DSN = os.environ.get("SENTRY_DSN", None)
 
@@ -24,9 +25,10 @@ settings = get_project_settings()
 
 def get_client(dsn=None, **options):
     """gets a scrapy client"""
-    return Client(dsn or settings.get("SENTRY_DSN", SENTRY_DSN),
-                  transport=RequestsHTTPTransport, **options)
-
+    # return Client(dsn or settings.get("SENTRY_DSN", SENTRY_DSN),
+    #               transport=RequestsHTTPTransport, **options)
+    sentry_sdk.init(dsn)
+    
 
 def get_release(crawler):
     """gets the release from a given crawler"""
@@ -41,16 +43,18 @@ def get_release(crawler):
 def init(dsn=None):
     """Redirect Scrapy log messages to standard Python logger"""
 
-    observer = log.PythonLoggingObserver()
-    observer.start()
-
-    dict_config = settings.get("LOGGING")
-    if dict_config is not None:
-        assert isinstance(dict_config, dict)
-        logging.dictConfig(dict_config)
-
-    handler = SentryHandler(dsn)
-    setup_logging(handler)
+    # Not needed since scrapy moved to using built-in python logging
+    pass
+    # observer = log.PythonLoggingObserver()
+    # observer.start()
+    #
+    # dict_config = settings.get("LOGGING")
+    # if dict_config is not None:
+    #     assert isinstance(dict_config, dict)
+    #     logging.dictConfig(dict_config)
+    #
+    # handler = SentryHandler(dsn)
+    # setup_logging(handler)
 
 
 def response_to_dict(response, spider, include_request=True, **kwargs):
