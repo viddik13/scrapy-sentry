@@ -1,12 +1,8 @@
-"""
-Send signals to Sentry
-
-Use SENTRY_DSN setting to enable sending information
-"""
 from __future__ import absolute_import, unicode_literals
 
 import os
 import logging
+import importlib
 
 from scrapy import signals
 from scrapy.exceptions import NotConfigured
@@ -32,7 +28,7 @@ class Log(object):
 
 class Signals(object):
     def __init__(self, client=None, dsn=None, **kwargs):
-        self.client = client if client else get_client(dsn)
+        get_client(dsn)
 
     @classmethod
     def from_crawler(cls, crawler, client=None, dsn=None):
@@ -60,7 +56,7 @@ class Signals(object):
         with sentry_sdk.push_scope() as scope:
             for k, v in extra.iteritems():
                 scope.set_extra(k,v)
-            sentry_sdk.capture_message(message, extra=extra)
+            sentry_sdk.capture_message(message)
         ident = sentry_sdk.last_event_id
         return ident
 
@@ -80,11 +76,21 @@ class Errors(object):
         if dsn is None:
             raise NotConfigured('No SENTRY_DSN configured')
         o = cls(dsn=dsn, release=release, **additional_opts)
-        crawler.signals.connect(o.spider_error, signal=signals.spider_error)
+
+        sentry_signals = crawler.settings.get("SENTRY_SIGNALS", [])
+        if len(sentry_signals)>0:
+            receiver = o.spider_error
+            for signalpath in sentry_signals:
+                signalmodule, signalname = signalpath.rsplit('.', 1)
+                _m = importlib.import_module(signalmodule)
+                signal = getattr(_m, signalname)
+                crawler.signals.connect(receiver, signal=signal)
+        else:
+            crawler.signals.connect(o.spider_error, signal=signals.spider_error)
         return o
 
     def spider_error(self, failure, response, spider,
-                     signal=None, sender=None, *args, **kwargs):
+                     signal=None, sender=None, extra_context=None, *args, **kwargs):
         traceback = StringIO()
         failure.printTraceback(file=traceback)
 
@@ -98,6 +104,8 @@ class Errors(object):
             'response': res_dict,
             'traceback': "\n".join(traceback.getvalue().split("\n")[-5:]),
         }
+        if extra_context is not None:
+            extra.update(extra_context)
         with sentry_sdk.push_scope() as scope:
             for k, v in extra.iteritems():
                 scope.set_extra(k,v)
