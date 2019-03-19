@@ -31,7 +31,7 @@ class SentryMiddleware(object):
             for k, v in extradata.iteritems():
                 scope.set_extra(k,v)
             sentry_sdk.capture_exception(sys.exc_info())
-        ident = sentry_sdk.last_event_id
+        ident = sentry_sdk.last_event_id()
         logging.log(logging.INFO, "Sentry Exception ID '%s'" % ident)
         return None
 

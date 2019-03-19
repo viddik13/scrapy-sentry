@@ -62,7 +62,7 @@ class Signals(object):
             for k, v in extra.iteritems():
                 scope.set_extra(k,v)
             sentry_sdk.capture_message(message)
-        ident = sentry_sdk.last_event_id
+        ident = sentry_sdk.last_event_id()
         return ident
 
 
@@ -122,7 +122,7 @@ class Errors(object):
             scope.level = scope_level
             sentry_sdk.capture_message("[{}] {}".format(spider.name, repr(failure.value)))
 
-        ident = sentry_sdk.last_event_id
+        ident = sentry_sdk.last_event_id()
         logging.log(logging.WARNING, "Sentry Exception ID '%s'" % ident)
 
         return ident
