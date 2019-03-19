@@ -1,3 +1,8 @@
+"""
+Send signals to Sentry
+
+Use SENTRY_DSN setting to enable sending information
+"""
 from __future__ import absolute_import, unicode_literals
 
 import os
@@ -63,7 +68,6 @@ class Signals(object):
 
 class Errors(object):
     def __init__(self, dsn=None, client=None, **kwargs):
-        # self.client = client if client else get_client(dsn, **kwargs)
         get_client(dsn, **kwargs)
 
     @classmethod
