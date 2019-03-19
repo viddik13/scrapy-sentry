@@ -21,7 +21,7 @@ settings = get_project_settings()
 
 def get_client(dsn=None, **options):
     """gets a scrapy client"""
-    sentry_sdk.init(dsn)
+    sentry_sdk.init(dsn, **options)
 
 
 def get_release(crawler):

@@ -94,7 +94,8 @@ class Errors(object):
         return o
 
     def spider_error(self, failure, response, spider,
-                     signal=None, sender=None, scope_extra=None, *args, **kwargs):
+                     signal=None, sender=None,  scope_tags=None, scope_extra=None, scope_level='error',
+                     *args, **kwargs):
         traceback = StringIO()
         failure.printTraceback(file=traceback)
 
@@ -108,11 +109,17 @@ class Errors(object):
             'response': res_dict,
             'traceback': "\n".join(traceback.getvalue().split("\n")[-5:]),
         }
+        tags = {}
+        if scope_tags is not None:
+            tags.update(scope_tags)
         if scope_extra is not None:
             extra.update(scope_extra)
         with sentry_sdk.push_scope() as scope:
-            for k, v in extra.iteritems():
-                scope.set_extra(k,v)
+            for _k, _v in extra.iteritems():
+                scope.set_extra(_k, _v)
+            for _k, _v in tags.iteritems():
+                scope.set_tag(_k, _v)
+            scope.level = scope_level
             sentry_sdk.capture_message("[{}] {}".format(spider.name, repr(failure.value)))
 
         ident = sentry_sdk.last_event_id
