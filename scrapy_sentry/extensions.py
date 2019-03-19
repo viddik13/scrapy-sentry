@@ -94,7 +94,7 @@ class Errors(object):
         return o
 
     def spider_error(self, failure, response, spider,
-                     signal=None, sender=None, extra_context=None, *args, **kwargs):
+                     signal=None, sender=None, scope_extra=None, *args, **kwargs):
         traceback = StringIO()
         failure.printTraceback(file=traceback)
 
@@ -108,8 +108,8 @@ class Errors(object):
             'response': res_dict,
             'traceback': "\n".join(traceback.getvalue().split("\n")[-5:]),
         }
-        if extra_context is not None:
-            extra.update(extra_context)
+        if scope_extra is not None:
+            extra.update(scope_extra)
         with sentry_sdk.push_scope() as scope:
             for k, v in extra.iteritems():
                 scope.set_extra(k,v)
