@@ -97,8 +97,7 @@ class Errors(object):
                      signal=None, sender=None,  scope_tags=None, scope_extra=None, scope_level='error',
                      *args, **kwargs):
         traceback = StringIO()
-        failure.printTraceback(file=traceback)
-
+        err = failure.value
         res_dict = response_to_dict(response, spider, include_request=True)
 
         extra = {
@@ -107,7 +106,7 @@ class Errors(object):
             'signal': signal,
             'failure': failure,
             'response': res_dict,
-            'traceback': "\n".join(traceback.getvalue().split("\n")[-5:]),
+            'traceback': failure.getTraceback(),
         }
         tags = {}
         if scope_tags is not None:
@@ -120,7 +119,7 @@ class Errors(object):
             for _k, _v in tags.iteritems():
                 scope.set_tag(_k, _v)
             scope.level = scope_level
-            sentry_sdk.capture_message("[{}] {}".format(spider.name, repr(failure.value)))
+            sentry_sdk.capture_exception((type(err), err, traceback))
 
         ident = sentry_sdk.last_event_id()
         logging.log(logging.WARNING, "Sentry Exception ID '%s'" % ident)
